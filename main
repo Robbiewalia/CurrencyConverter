@@ -1,0 +1,75 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        // Create a Scanner object to read input from the user
+        Scanner scanner = new Scanner(System.in);
+
+        // Prompt the user to enter the amount to convert
+        System.out.println("Enter the amount to convert:");
+        double amount = scanner.nextDouble();
+        scanner.nextLine(); // Consume the newline character left after reading the double
+
+        // Prompt the user to enter the base currency
+        System.out.println("Enter the base currency (e.g., USD):");
+        String baseCurrency = scanner.nextLine().toUpperCase();
+
+        // Prompt the user to enter the target currency
+        System.out.println("Enter the target currency (e.g., EUR):");
+        String targetCurrency = scanner.nextLine().toUpperCase();
+
+        // Call the convertCurrency method and display the result
+        double convertedAmount = convertCurrency(amount, baseCurrency, targetCurrency);
+        System.out.printf("%.2f %s is approximately %.2f %s\n", amount, baseCurrency, convertedAmount, targetCurrency);
+    }
+
+    public static double convertCurrency(double amount, String baseCurrency, String targetCurrency) {
+        try {
+            // Your API key for exchangerate-api.com
+            String apiKey = "5ff49b15c4a4638d6e4eb61d"; // Replace with your actual API key
+
+            // Construct the API URL
+            String apiUrl = "https://v6.exchangerate-api.com/v6/" + apiKey + "/latest/" + baseCurrency;
+
+            // Open a connection to the API URL
+            URL url = new URL(apiUrl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            // Read the response from the API
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Parse the response and extract the exchange rate
+            String responseStr = response.toString();
+            if (responseStr.contains("\"success\":false")) {
+                System.out.println("API request failed: " + responseStr);
+                return 0;
+            }
+
+            // Extract the exchange rate from the JSON response
+            int start = responseStr.indexOf(targetCurrency) + targetCurrency.length() + 3;
+            int end = responseStr.indexOf(',', start);
+            end = end == -1 ? responseStr.indexOf('}', start) : end;
+            double exchangeRate = Double.parseDouble(responseStr.substring(start, end));
+
+            // Return the converted amount
+            return amount * exchangeRate;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+}
+
+
+
